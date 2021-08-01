@@ -7,24 +7,18 @@ from datetime import date, timedelta
 from scrapy.loader import ItemLoader
 from loginform import fill_login_form
 from scrapy.http import FormRequest
-from pgc.items import KprkItem
+from pgc.items import AlokasiItem, RealisasiItem
 
 
 class PgcSpider(scrapy.Spider):
     custom_settings = {
-        'FEED_EXPORT_FIELDS': {
-            'program',
-            'nopend',
-            'kprk',
-            'alokasi'
-        },
         'ITEM_PIPELINES': {
             'pgc.pipelines.PgcPipeline': 100,
             # 'name.pipelines.KamusNamaDataParse': 200
         }
     }
 
-    name = 'reportkprk'
+    name = 'kprk'
     # intranet URL
     #baseUrl = 'https://pgc.posindonesia.co.id:8011/'
 
@@ -93,7 +87,29 @@ class PgcSpider(scrapy.Spider):
         for row in response.css('table.table > tbody > tr'):
             # self.logger.info(kodeReg)
 
-            loader = ItemLoader(item=KprkItem(), selector=row)
+            '''
+            nopend = row.xpath('td[2]//text()').get()
+            kprk = row.xpath('td[3]//text()').get()
+            alokasi = row.xpath('td[4]//text()').get()
+            dt = self.startDate
+
+            while dt <= self.endDate:
+                targetUrl = 'https://pgcreport.posindonesia.co.id:33500/report_sum/kprk/' + str(kodeReg) + '?date_1=' + \
+                    dt.strftime('%m/%d/%Y') + '&date_2=' + dt.strftime('%m/%d/%Y') + \
+                    '&tag_voucher=' + str(response.meta['program'])
+                yield response.follow(targetUrl, self.parseRealisasi, meta={
+                    'program': response.meta['program'],
+                    'kprk': kprk,
+                    'alokasi': alokasi,
+                    'kodeReg': kodeReg,
+                    'nopend': nopend,
+                    'tanggal': dt.strftime('%d-%m-%Y')
+                })
+
+                dt = dt + datetime.timedelta(days=1)
+            '''
+
+            loader = ItemLoader(item=AlokasiItem(), selector=row)
             if response.meta['program'] == 1:
                 loader.add_value('program', 'BST')
             else:
@@ -101,10 +117,12 @@ class PgcSpider(scrapy.Spider):
             nopend = row.xpath('td[2]//text()').get()
             loader.add_value('nopend', nopend)
             #loader.add_xpath('nopend', 'td[2]//text()')
-            loader.add_xpath('kprk', 'td[3]//text()')
+            kprk = row.xpath('td[3]//text()').get()
+            loader.add_value('kprk', kprk)
             loader.add_xpath('alokasi', 'td[4]//text()')
 
-            alokasiItem = loader.load_item()
+            #alokasiItem = loader.load_item()
+
             dt = self.startDate
 
             while dt <= self.endDate:
@@ -112,9 +130,16 @@ class PgcSpider(scrapy.Spider):
                 targetUrl = 'https://pgcreport.posindonesia.co.id:33500/report_sum/kprk/' + str(kodeReg) + '?date_1=' + \
                     dt.strftime('%m/%d/%Y') + '&date_2=' + dt.strftime('%m/%d/%Y') + \
                     '&tag_voucher=' + str(response.meta['program'])
-                yield response.follow(targetUrl, self.parseRealisasi, meta={'alokasiItem': alokasiItem, 'nopend': nopend, 'tanggal': dt.strftime('%d-%m-%Y')})
+                yield response.follow(targetUrl, self.parseRealisasi, meta={
+                    'program': response.meta['program'],
+                    'nopend': nopend,
+                    'kprk': kprk,
+                    'tanggal': dt.strftime('%d-%m-%Y')
+                })
 
                 dt = dt + datetime.timedelta(days=1)
+
+            yield loader.load_item()
             # yield loader.load_item()
 
             # alokasi
@@ -126,16 +151,21 @@ class PgcSpider(scrapy.Spider):
     def parseRealisasi(self, response):
         self.logger.info('Parse page realisasi')
         # self.logger.info(response.url)
-        alokasiItem = response.meta['alokasiItem']
+
+        #alokasiItem = response.meta['alokasiItem']
 
         for row in response.css('table.table > tbody > tr'):
-            if (response.meta['nopend'] == row.xpath('td[2]//text()').get()):
-                loader = ItemLoader(item=alokasiItem, response=response)
-                loader.add_value('tanggal', response.meta['tanggal'])
-                loader.add_xpath('realisasi', 'td[4]//text()')
-                loader.add_xpath('nominal', 'td[5]//text()')
+            loader = ItemLoader(item=RealisasiItem(), selector=row)
+            if response.meta['program'] == 1:
+                loader.add_value('program', 'BST')
+            else:
+                loader.add_value('program', 'PKH')
+            loader.add_value('nopend', response.meta['nopend'])
+            loader.add_value('kprk', response.meta['kprk'])
+            loader.add_value('tanggal', response.meta['tanggal'])
+            loader.add_xpath('realisasi', 'td[4]//text()')
 
-                yield loader.load_item()
-                # self.logger.info(row.xpath('td[3]//text()').get())
-                # self.logger.info(row.xpath('td[5]//text()').get())
+            yield loader.load_item()
+            # self.logger.info(row.xpath('td[3]//text()').get())
+            # self.logger.info(row.xpath('td[5]//text()').get())
             #loader = ItemLoader(item=alokasiItem, response=response)

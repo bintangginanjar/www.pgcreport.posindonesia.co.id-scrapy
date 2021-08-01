@@ -6,32 +6,38 @@
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
+from pgc.items import AlokasiItem, RealisasiItem
 
 
 class PgcPipeline:
+    def removeComma(self, text):
+        text = text.replace(',', '')
+
+        return text
+
     def process_item(self, item, spider):
+        if isinstance(item, AlokasiItem):
+            return self.processAlokasiItem(item, spider)
+
+        if isinstance(item, RealisasiItem):
+            return self.processRealisasiItem(item, spider)
+
+    def processAlokasiItem(self, item, spidr):
         adapter = ItemAdapter(item)
 
-        def removeComma(text):
-            text = text.replace(',', '')
-
-            return text
-
         if adapter.get('alokasi'):
-            item['alokasi'] = removeComma(item['alokasi'][0])
+            item['alokasi'] = self.removeComma(item['alokasi'][0])
         else:
             item['alokasi'] = 0
 
-        '''
+        return item
+
+    def processRealisasiItem(self, item, spider):
+        adapter = ItemAdapter(item)
+
         if adapter.get('realisasi'):
-            item['realisasi'] = removeComma(item['realisasi'][0])
+            item['realisasi'] = self.removeComma(item['realisasi'][0])
         else:
             item['realisasi'] = 0
-
-        if adapter.get('nominal'):
-            item['nominal'] = removeComma(item['nominal'][0])
-        else:
-            item['nominal'] = 0
-        '''
 
         return item
