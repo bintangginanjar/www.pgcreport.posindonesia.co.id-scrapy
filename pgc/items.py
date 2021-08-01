@@ -15,7 +15,7 @@ class AlokasiItem(scrapy.Item):
     program = Field()
     nopend = Field()
     kprk = Field()
-    alokasi = Field()    
+    alokasi = Field()
 
     pass
 
@@ -23,7 +23,7 @@ class AlokasiItem(scrapy.Item):
 class RealisasiItem(scrapy.Item):
     program = Field()
     nopend = Field()
-    kprk = Field()    
+    kprk = Field()
     tanggal = Field()
     realisasi = Field()
     nominal = Field()

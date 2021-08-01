@@ -19,6 +19,9 @@ NEWSPIDER_MODULE = 'pgc.spiders'
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
+# Define database connection
+CONNECTION_STRING = 'sqlite:///scrapy_quotes.db'
+
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 

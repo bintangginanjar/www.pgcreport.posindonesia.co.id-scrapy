@@ -27,8 +27,8 @@ class PgcSpider(scrapy.Spider):
 
     nippos = '973365365'
     password = 'bansos2021'
-    startDate = datetime.datetime(2021, 7, 25)  # .strftime('%m/%d/%Y')
-    endDate = datetime.datetime(2021, 7, 31)  # .strftime('%m/%d/%Y')
+    startDate = datetime.datetime(2021, 7, 25)
+    endDate = datetime.datetime(2021, 7, 31)
 
     def __init__(self, *args, **kwargs):
         super(PgcSpider, self).__init__(*args, **kwargs)
@@ -82,32 +82,9 @@ class PgcSpider(scrapy.Spider):
     def parseAlokasiKprk(self, response):
         self.logger.info('Parse alokasi KPRK')
         kodeReg = re.search('[0-9][0-9][0-9][0-9][0-9]',
-                            response.css('h3.card-title::text').get()).group(0)
-        #kodeReg = response.css('h3.card-title::text').get()
+                            response.css('h3.card-title::text').get()).group(0)        
         for row in response.css('table.table > tbody > tr'):
             # self.logger.info(kodeReg)
-
-            '''
-            nopend = row.xpath('td[2]//text()').get()
-            kprk = row.xpath('td[3]//text()').get()
-            alokasi = row.xpath('td[4]//text()').get()
-            dt = self.startDate
-
-            while dt <= self.endDate:
-                targetUrl = 'https://pgcreport.posindonesia.co.id:33500/report_sum/kprk/' + str(kodeReg) + '?date_1=' + \
-                    dt.strftime('%m/%d/%Y') + '&date_2=' + dt.strftime('%m/%d/%Y') + \
-                    '&tag_voucher=' + str(response.meta['program'])
-                yield response.follow(targetUrl, self.parseRealisasi, meta={
-                    'program': response.meta['program'],
-                    'kprk': kprk,
-                    'alokasi': alokasi,
-                    'kodeReg': kodeReg,
-                    'nopend': nopend,
-                    'tanggal': dt.strftime('%d-%m-%Y')
-                })
-
-                dt = dt + datetime.timedelta(days=1)
-            '''
 
             loader = ItemLoader(item=AlokasiItem(), selector=row)
             if response.meta['program'] == 1:
@@ -115,18 +92,14 @@ class PgcSpider(scrapy.Spider):
             else:
                 loader.add_value('program', 'PKH')
             nopend = row.xpath('td[2]//text()').get()
-            loader.add_value('nopend', nopend)
-            #loader.add_xpath('nopend', 'td[2]//text()')
+            loader.add_value('nopend', nopend)            
             kprk = row.xpath('td[3]//text()').get()
             loader.add_value('kprk', kprk)
             loader.add_xpath('alokasi', 'td[4]//text()')
-
-            #alokasiItem = loader.load_item()
-
+            
             dt = self.startDate
 
-            while dt <= self.endDate:
-                #targetUrl = 'https://pgcreport.posindonesia.co.id:33500/report_sum/kprk/20004?date_1=07/25/2021&date_2=07/25/2021&tag_voucher=ALL'
+            while dt <= self.endDate:                
                 targetUrl = 'https://pgcreport.posindonesia.co.id:33500/report_sum/kprk/' + str(kodeReg) + '?date_1=' + \
                     dt.strftime('%m/%d/%Y') + '&date_2=' + dt.strftime('%m/%d/%Y') + \
                     '&tag_voucher=' + str(response.meta['program'])
@@ -140,13 +113,6 @@ class PgcSpider(scrapy.Spider):
                 dt = dt + datetime.timedelta(days=1)
 
             yield loader.load_item()
-            # yield loader.load_item()
-
-            # alokasi
-            # 'https://pgcreport.posindonesia.co.id:33500/report/alokasi/kprk/20004?kode_wilayah=&tag_voucher=ALL
-
-            # realisasi
-            # 'https://pgcreport.posindonesia.co.id:33500/report_sum/kprk/20004?date_1=07/25/2021&date_2=07/25/2021&tag_voucher=ALL'
 
     def parseRealisasi(self, response):
         self.logger.info('Parse page realisasi')
@@ -166,6 +132,3 @@ class PgcSpider(scrapy.Spider):
             loader.add_xpath('realisasi', 'td[4]//text()')
 
             yield loader.load_item()
-            # self.logger.info(row.xpath('td[3]//text()').get())
-            # self.logger.info(row.xpath('td[5]//text()').get())
-            #loader = ItemLoader(item=alokasiItem, response=response)
