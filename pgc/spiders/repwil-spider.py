@@ -10,7 +10,7 @@ from scrapy.http import FormRequest
 from pgc.items import AlokasiItem, RealisasiItem
 
 
-class PgcSpider(scrapy.Spider):
+class RepwilSpider(scrapy.Spider):
     custom_settings = {
         'ITEM_PIPELINES': {
             'pgc.pipelines.PgcPipeline': 100,
@@ -18,7 +18,7 @@ class PgcSpider(scrapy.Spider):
         }
     }
 
-    name = 'kprk'
+    name = 'repwil'
     # intranet URL
     #baseUrl = 'https://pgc.posindonesia.co.id:8011/'
 
@@ -27,8 +27,8 @@ class PgcSpider(scrapy.Spider):
 
     nippos = '973365365'
     password = 'bansos2021'
-    startDate = datetime.datetime(2021, 7, 25)
-    endDate = datetime.datetime(2021, 7, 31)
+    startDate = datetime.datetime(2021, 7, 21)
+    endDate = datetime.datetime(2021, 8, 2)
 
     def __init__(self, *args, **kwargs):
         super(PgcSpider, self).__init__(*args, **kwargs)
@@ -120,15 +120,19 @@ class PgcSpider(scrapy.Spider):
 
         #alokasiItem = response.meta['alokasiItem']
 
-        for row in response.css('table.table > tbody > tr'):
-            loader = ItemLoader(item=RealisasiItem(), selector=row)
-            if response.meta['program'] == 1:
-                loader.add_value('program', 'BST')
-            else:
-                loader.add_value('program', 'PKH')
-            loader.add_value('nopend', response.meta['nopend'])
-            loader.add_value('kprk', response.meta['kprk'])
-            loader.add_value('tanggal', response.meta['tanggal'])
-            loader.add_xpath('realisasi', 'td[4]//text()')
+        rowList = response.css('table.table > tbody > tr')
+        if len(rowList) > 0:
+            for row in rowList:
+            #for row in response.css('table.table > tbody > tr'):
+                loader = ItemLoader(item=RealisasiItem(), selector=row)
+                if response.meta['program'] == 1:
+                    loader.add_value('program', 'BST')
+                else:
+                    loader.add_value('program', 'PKH')
+                loader.add_xpath('nopend', 'td[2]//text()')
+                loader.add_xpath('kprk', 'td[3]//text()')
+                loader.add_value('tanggal', response.meta['tanggal'])
+                loader.add_xpath('realisasi', 'td[4]//text()')
+                loader.add_xpath('nominal', 'td[5]//text()')
 
-            yield loader.load_item()
+                yield loader.load_item()

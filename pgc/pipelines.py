@@ -45,7 +45,7 @@ class PgcPipeline:
             item['alokasi'] = self.removeComma(item['alokasi'][0])
         else:
             item['alokasi'] = 0
-
+        
         tbAlokasi = Alokasi()
         tbAlokasi.program = item['program'][0]
         tbAlokasi.nopend = item['nopend'][0]
@@ -60,18 +60,47 @@ class PgcPipeline:
             session.rollback()
             raise
         finally:
-            session.close()
+            session.close()        
 
         return item
 
     def processRealisasiItem(self, item, spider):
         adapter = ItemAdapter(item)
+        session = self.Session()
 
         if adapter.get('realisasi'):
             item['realisasi'] = self.removeComma(item['realisasi'][0])
         else:
             item['realisasi'] = 0
 
-        tbRealisasi = Realisasi()
+        if adapter.get('nominal'):
+            item['nominal'] = self.removeComma(item['nominal'][0])
+        else:
+            item['nominal'] = 0
+
+        '''
+        if not adapter.get('nopend'):
+            item['nopend'] = ''
+
+        if not adapter.get('kprk'):
+            item['kprk'] = ''
+        '''
+                 
+        tbRealisasi = Realisasi()        
+        tbRealisasi.program = item['program'][0]
+        tbRealisasi.nopend = item['nopend'][0]
+        tbRealisasi.kprk = item['kprk'][0]
+        tbRealisasi.tanggal = item['tanggal'][0]
+        tbRealisasi.realisasi = item['realisasi']
+        tbRealisasi.nominal = item['nominal']
+
+        try:
+            session.add(tbRealisasi)
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
         return item
